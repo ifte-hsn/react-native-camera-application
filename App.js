@@ -11,6 +11,11 @@ import { Camera, useCameraDevices } from "react-native-vision-camera";
 
 const App = () => {
   const camera = useRef(null);
+  const [isRecording, setIsRecording] = useState(false);
+  const [video, setVideo] = useState(null);
+  const [mode, setMode] = useState('photo');
+  const [media, setMedia] = useState(null);
+
 
 
 
@@ -56,6 +61,47 @@ const App = () => {
     camera.current.stopRecording()
   }
 
+
+
+  const handleCaptureButtonPress = async () => {
+    console.log(mode)
+    if (mode === 'photo') {
+      // Capture photo
+      try {
+        const photo = await camera.current.takePhoto();
+        console.log(photo)
+        setMedia(photo);
+      } catch (error) {
+        console.log(error);
+      }
+    } else if (mode === 'video') {
+      try {
+        if (isRecording) {
+          console.log(isRecording)
+          // Stop recording
+          camera.current.stopRecording();
+          // setMedia(videoFile);
+          setIsRecording(false);
+        } else {
+          // Start recording
+          // await camera.current.startRecording();
+          // setIsRecording(true);
+
+          const video = camera.current.startRecording({
+            flash: 'on',
+            onRecordingFinished: (video) => console.log(video),
+            onRecordingError: (error) => console.error(error),
+          })
+
+          console.log(video)
+          setIsRecording(true);
+        }
+      } catch (error) {
+        console.log(error);
+      }
+    }
+  };
+
   if (device == null) return <ActivityIndicator />
 
   return (
@@ -63,57 +109,33 @@ const App = () => {
       <Camera
         ref={camera}
         device={device}
-        style={StyleSheet.absoluteFill}
+        style={{ flex: 1 }}
         isActive={true}
         preset="medium"
-        photo={true}
-        video={true}
-        audio={true}
+        onInitialized={() => console.log('Camera initialized!')}
+        photo={mode === 'photo'}
+        video={mode === 'video'}
+        audio={mode === 'video'}
       />
-      <TouchableOpacity
-        style={{
-          width: 60,
-          height: 60,
-          borderRadius: 30,
-          backgroundColor: '#ff3c3c',
-          position: 'absolute',
-          bottom: 50,
-          alignSelf: 'center'
-        }
-        }
-        onPress={takePicture}>
 
-      </TouchableOpacity>
-      <TouchableOpacity
-        style={{
-          width: 60,
-          height: 60,
-          borderRadius: 30,
-          backgroundColor: '#fff',
-          position: 'absolute',
-          bottom: 50,
-          alignSelf: 'flex-end'
-        }
-        }
-        onPress={recordVideo}>
+      {mode == "photo" && (
+        <Button
+          title={isRecording ? 'Stop Recording' : 'Capture'}
+          onPress={() => handleCaptureButtonPress(camera.current)}
+        />
+      )}
 
-      </TouchableOpacity>
+      {mode == "video" && (
+        <Button
+          title={isRecording ? 'Stop Recording' : 'Record'}
+          onPress={handleCaptureButtonPress}
+        />
+      )}
 
-
-      <TouchableOpacity
-        style={{
-          width: 60,
-          height: 60,
-          borderRadius: 30,
-          backgroundColor: '#fff',
-          position: 'absolute',
-          bottom: 50,
-          alignSelf: 'flex-start'
-        }
-        }
-        onPress={stopRecording}>
-
-      </TouchableOpacity>
+      <Button
+        title="Switch Mode"
+        onPress={() => setMode((prevMode) => (prevMode === 'photo' ? 'video' : 'photo'))}
+      />
     </View>
   );
 };
